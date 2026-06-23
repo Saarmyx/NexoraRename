@@ -1,0 +1,14 @@
+# Python (Archivos compilados y caché)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de registro e historial (Datos locales)
+logs/
+history.json
+
+# Entornos virtuales (Por si creas uno más adelante)
+venv/
+.venv/
+env/
