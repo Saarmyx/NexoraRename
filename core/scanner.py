@@ -3,9 +3,7 @@ import os
 
 from core.renamer import generate_name
 
-
 SUPPORTED_EXTENSIONS = {
-
     ".jpg",
     ".jpeg",
     ".png",
@@ -13,7 +11,6 @@ SUPPORTED_EXTENSIONS = {
     ".heic",
     ".bmp",
     ".tiff",
-
     ".mp4",
     ".mov",
     ".mkv",
@@ -24,25 +21,34 @@ SUPPORTED_EXTENSIONS = {
 }
 
 
-def scan_folder(folder):
+def scan_folders(folders, progress_callback=None):
 
     results = []
 
-    folder = Path(folder)
+    all_files = []
 
-    for root, _, files in os.walk(folder):
+    # recopilar archivos primero
 
-        root = Path(root)
+    for folder in folders:
 
-        for file in files:
+        folder = Path(folder)
 
-            file_path = root / file
+        for root, _, files in os.walk(folder):
 
-            if (
-                file_path.suffix.lower()
-                not in SUPPORTED_EXTENSIONS
-            ):
-                continue
+            root = Path(root)
+
+            for file in files:
+
+                file_path = root / file
+
+                if file_path.suffix.lower() in SUPPORTED_EXTENSIONS:
+                    all_files.append(file_path)
+
+    total = len(all_files)
+
+    for index, file_path in enumerate(all_files, start=1):
+
+        try:
 
             new_name = generate_name(file_path)
 
@@ -51,5 +57,12 @@ def scan_folder(folder):
                 "original": file_path.name,
                 "new": new_name
             })
+
+        except Exception as e:
+            print(e)
+
+        if progress_callback:
+            progress = int((index / total) * 100)
+            progress_callback(progress)
 
     return results
