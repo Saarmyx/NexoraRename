@@ -1,3 +1,4 @@
+from core.worker import ScanWorker
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
