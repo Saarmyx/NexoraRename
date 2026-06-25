@@ -5,7 +5,7 @@ from PIL import Image, ExifTags
 
 try:
     from pymediainfo import MediaInfo
-except Exception:
+except ImportError:
     MediaInfo = None
 
 
@@ -16,7 +16,7 @@ IMAGE_EXTENSIONS = {
     ".webp",
     ".heic",
     ".bmp",
-    ".tiff",
+    ".tiff"
 }
 
 VIDEO_EXTENSIONS = {
@@ -26,11 +26,10 @@ VIDEO_EXTENSIONS = {
     ".avi",
     ".webm",
     ".3gp",
-    ".m4v",
+    ".m4v"
 }
 
-
-EXIF_TAGS = {
+EXIF_DATETIME_TAGS = {
     "DateTimeOriginal",
     "DateTimeDigitized",
     "DateTime"
@@ -38,6 +37,9 @@ EXIF_TAGS = {
 
 
 def get_exif_datetime(path: Path):
+    """
+    Obtiene la fecha EXIF de una imagen.
+    """
 
     try:
         with Image.open(path) as img:
@@ -49,61 +51,100 @@ def get_exif_datetime(path: Path):
 
             for tag_id, value in exif.items():
 
-                tag = ExifTags.TAGS.get(tag_id)
+                tag_name = ExifTags.TAGS.get(
+                    tag_id,
+                    tag_id
+                )
 
-                if tag in EXIF_TAGS:
+                if tag_name in EXIF_DATETIME_TAGS:
 
                     try:
                         return datetime.strptime(
                             str(value),
                             "%Y:%m:%d %H:%M:%S"
                         )
-                    except:
-                        pass
+                    except Exception:
+                        continue
 
-    except:
+    except Exception:
         pass
 
     return None
 
 
 def get_video_datetime(path: Path):
+    """
+    Obtiene la fecha real de creación de vídeos.
+    """
 
-    if not MediaInfo:
+    if MediaInfo is None:
         return None
 
     try:
 
-        media_info = MediaInfo.parse(str(path))
+        media_info = MediaInfo.parse(
+            str(path)
+        )
 
         for track in media_info.tracks:
 
-            if track.track_type == "General":
+            if track.track_type != "General":
+                continue
 
-                fields = [
-                    track.recorded_date,
-                    track.tagged_date,
-                    track.file_last_modification_date
-                ]
+            candidates = [
+                getattr(track, "recorded_date", None),
+                getattr(track, "tagged_date", None),
+                getattr(track, "file_last_modification_date", None)
+            ]
 
-                for value in fields:
+            for date_value in candidates:
 
-                    if value:
+                if not date_value:
+                    continue
 
-                        try:
-                            return datetime.fromisoformat(
-                                value.replace("UTC ", "")
-                            )
-                        except:
-                            pass
+                try:
 
-    except:
+                    date_value = (
+                        date_value
+                        .replace("UTC ", "")
+                        .replace("Z", "")
+                    )
+
+                    return datetime.fromisoformat(
+                        date_value
+                    )
+
+                except Exception:
+                    continue
+
+    except Exception:
         pass
 
     return None
 
 
+def get_filesystem_datetime(path: Path):
+    """
+    Usa la fecha de modificación del sistema.
+    """
+
+    try:
+        return datetime.fromtimestamp(
+            path.stat().st_mtime
+        )
+    except Exception:
+        return datetime.now()
+
+
 def get_best_datetime(path: Path):
+    """
+    Obtiene la mejor fecha disponible.
+    Prioridad:
+
+    1. EXIF
+    2. Metadata vídeo
+    3. Fecha modificación
+    """
 
     ext = path.suffix.lower()
 
@@ -121,9 +162,4 @@ def get_best_datetime(path: Path):
         if dt:
             return dt
 
-    try:
-        return datetime.fromtimestamp(
-            path.stat().st_mtime
-        )
-    except:
-        return datetime.now()
+    return get_filesystem_datetime(path)

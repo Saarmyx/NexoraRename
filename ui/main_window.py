@@ -31,9 +31,7 @@ class MainWindow(QMainWindow):
 
         self.init_ui()
 
-    # ==================================================
     # INTERFAZ
-    # ==================================================
 
     def init_ui(self):
 
@@ -45,9 +43,9 @@ class MainWindow(QMainWindow):
 
         main_layout = QVBoxLayout()
 
-        # ==================================================
+
         # BOTONES DE CARPETAS
-        # ==================================================
+
 
         folder_buttons_layout = QHBoxLayout()
 
@@ -79,9 +77,9 @@ class MainWindow(QMainWindow):
             folder_buttons_layout
         )
 
-        # ==================================================
+
         # LISTA DE CARPETAS
-        # ==================================================
+
 
         self.folder_list = QListWidget()
 
@@ -89,9 +87,9 @@ class MainWindow(QMainWindow):
             self.folder_list
         )
 
-        # ==================================================
+
         # TABLA DE PREVISUALIZACIÓN
-        # ==================================================
+
 
         self.table = QTableWidget()
 
@@ -116,9 +114,9 @@ class MainWindow(QMainWindow):
             self.table
         )
 
-        # ==================================================
+
         # BOTONES DE ACCIÓN
-        # ==================================================
+
 
         actions_layout = QHBoxLayout()
 
@@ -163,9 +161,9 @@ class MainWindow(QMainWindow):
             actions_layout
         )
 
-        # ==================================================
+
         # BARRA DE PROGRESO
-        # ==================================================
+
 
         self.progress_bar = QProgressBar()
 
@@ -175,9 +173,9 @@ class MainWindow(QMainWindow):
             self.progress_bar
         )
 
-        # ==================================================
+
         # ESTADÍSTICAS
-        # ==================================================
+
 
         self.stats_label = QLabel(
             "Escaneados: 0"
@@ -191,9 +189,7 @@ class MainWindow(QMainWindow):
             main_layout
         )
 
-    # ==================================================
     # AGREGAR CARPETA
-    # ==================================================
 
     def add_folder(self):
 
@@ -219,9 +215,7 @@ class MainWindow(QMainWindow):
 
         self.folder_list.addItem(folder)
 
-    # ==================================================
     # ELIMINAR CARPETA
-    # ==================================================
 
     def remove_folder(self):
 
@@ -234,9 +228,7 @@ class MainWindow(QMainWindow):
 
         self.folder_list.takeItem(row)
 
-    # ==================================================
     # ESCANEAR CARPETAS
-    # ==================================================
 
     def start_scan(self):
 
@@ -275,17 +267,13 @@ class MainWindow(QMainWindow):
 
         self.worker.start()
 
-    # ==================================================
     # ACTUALIZAR PROGRESO
-    # ==================================================
 
     def update_progress(self, value):
 
         self.progress_bar.setValue(value)
 
-    # ==================================================
     # CARGAR TABLA
-    # ==================================================
 
     def load_preview(self, files):
 
@@ -324,9 +312,7 @@ class MainWindow(QMainWindow):
         if files:
             self.rename_btn.setEnabled(True)
 
-    # ==================================================
     # RENOMBRAR ARCHIVOS
-    # ==================================================
 
     def start_rename(self):
 
@@ -367,9 +353,7 @@ class MainWindow(QMainWindow):
 
         self.rename_worker.start()
 
-    # ==================================================
     # FINALIZAR RENOMBRADO
-    # ==================================================
 
     def finish_rename(self, stats):
 
