@@ -1,39 +1,81 @@
 from pathlib import Path
 import hashlib
 
-from core.history import (
-    load_history,
-    save_history
-)
+from core.history import add_history_entry
+from core.metadata_writer import update_metadata
 
 
-def sha256_file(path):
+def sha256_file(path: Path):
+    """
+    Calcula el hash SHA256 del archivo.
+    """
 
     sha = hashlib.sha256()
 
-    with open(path, "rb") as f:
+    try:
 
-        for chunk in iter(
-            lambda: f.read(1024 * 1024),
-            b""
+        with open(path, "rb") as f:
+
+            for chunk in iter(
+                    lambda: f.read(1024 * 1024),
+                    b""):
+
+                sha.update(chunk)
+
+        return sha.hexdigest()
+
+    except Exception:
+        return None
+
+
+def files_are_duplicate(
+        source: Path,
+        destination: Path):
+    """
+    Comprueba si dos archivos son idénticos.
+    """
+
+    try:
+
+        if not destination.exists():
+            return False
+
+        # Primera comprobación rápida
+
+        if (
+            source.stat().st_size !=
+            destination.stat().st_size
         ):
-            sha.update(chunk)
+            return False
 
-    return sha.hexdigest()
+        source_hash = sha256_file(source)
+        destination_hash = sha256_file(destination)
+
+        return (
+            source_hash == destination_hash
+        )
+
+    except Exception:
+        return False
 
 
 def generate_conflict_name(
-    directory,
-    base_name,
-    extension
-):
+        directory: Path,
+        base_name: str,
+        extension: str):
+    """
+    Genera nombres únicos en caso
+    de conflicto.
+    """
 
     counter = 1
 
     while True:
 
-        candidate = directory / (
-            f"{base_name}_{counter:03d}{extension}"
+        candidate = (
+            directory /
+            f"{base_name}_{counter:03d}"
+            f"{extension}"
         )
 
         if not candidate.exists():
@@ -42,20 +84,29 @@ def generate_conflict_name(
         counter += 1
 
 
-def execute_rename(files):
-
-    history = []
-
-    known_hashes = {}
+def execute_rename(
+        files,
+        progress_callback=None):
+    """
+    Ejecuta el renombrado masivo.
+    """
 
     stats = {
+
         "renamed": 0,
         "duplicates": 0,
         "conflicts": 0,
+        "metadata_updated": 0,
         "errors": 0
     }
 
-    for file in files:
+    known_hashes = {}
+
+    total = len(files)
+
+    for index, file in enumerate(
+            files,
+            start=1):
 
         try:
 
@@ -69,31 +120,51 @@ def execute_rename(files):
                 file["new"]
             )
 
-            # mismo nombre
+            # =================================
+            # MISMO NOMBRE
+            # =================================
 
             if source == destination:
+
+                if update_metadata(
+                        source,
+                        source.name,
+                        author="Saarmyx"):
+
+                    stats[
+                        "metadata_updated"
+                    ] += 1
+
                 continue
 
-            # hash global
+            # =================================
+            # HASH GLOBAL
+            # =================================
 
-            source_hash = sha256_file(source)
+            source_hash = sha256_file(
+                source
+            )
 
-            if source_hash in known_hashes:
+            if source_hash:
 
-                stats["duplicates"] += 1
-                continue
+                if source_hash in known_hashes:
 
-            known_hashes[source_hash] = source
+                    stats["duplicates"] += 1
+                    continue
 
-            # conflicto local
+                known_hashes[
+                    source_hash
+                ] = source
+
+            # =================================
+            # CONFLICTOS
+            # =================================
 
             if destination.exists():
 
-                destination_hash = (
-                    sha256_file(destination)
-                )
-
-                if destination_hash == source_hash:
+                if files_are_duplicate(
+                        source,
+                        destination):
 
                     stats["duplicates"] += 1
                     continue
@@ -108,25 +179,52 @@ def execute_rename(files):
 
                 stats["conflicts"] += 1
 
-            source.rename(destination)
+            # =================================
+            # RENOMBRAR
+            # =================================
 
-            history.append({
-                "old": str(source),
-                "new": str(destination)
-            })
+            source.rename(destination)
 
             stats["renamed"] += 1
 
+            add_history_entry(
+                source,
+                destination
+            )
+
+            # =================================
+            # ACTUALIZAR METADATOS
+            # =================================
+
+            if update_metadata(
+                    destination,
+                    destination.name,
+                    author="Saarmyx"):
+
+                stats[
+                    "metadata_updated"
+                ] += 1
+
         except Exception as e:
 
-            print(e)
+            print(
+                f"[RENAME ERROR] {e}"
+            )
 
             stats["errors"] += 1
 
-    previous = load_history()
+        # =====================================
+        # PROGRESO
+        # =====================================
 
-    previous.extend(history)
+        if progress_callback:
 
-    save_history(previous)
+            progress = int(
+                (index / total) * 100
+            )
+
+            progress_callback(
+                progress
+            )
 
     return stats
