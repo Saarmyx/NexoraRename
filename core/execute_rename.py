@@ -213,9 +213,7 @@ def execute_rename(
 
             stats["errors"] += 1
 
-        # =====================================
         # PROGRESO
-        # =====================================
 
         if progress_callback:
 

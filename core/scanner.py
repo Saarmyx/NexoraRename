@@ -50,9 +50,7 @@ def scan_folders(
 
     all_files = []
 
-    # =================================================
     # RECOPILAR ARCHIVOS
-    # =================================================
 
     for folder in folders:
 
@@ -84,9 +82,7 @@ def scan_folders(
     if total == 0:
         return results
 
-    # =================================================
     # PROCESAR ARCHIVOS
-    # =================================================
 
     for index, file_path in enumerate(
             all_files,
@@ -129,9 +125,7 @@ def scan_folders(
 
             print(e)
 
-        # ==========================================
         # PROGRESO
-        # ==========================================
 
         if progress_callback:
 
